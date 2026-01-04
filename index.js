@@ -76,7 +76,7 @@
 require("dotenv").config();
 const express = require("express");
 const Razorpay = require("razorpay");
-const bodyParser = require("body-parser");
+// const bodyParser = require("body-parser");
 const crypto = require("crypto");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
@@ -86,7 +86,9 @@ const app = express();
 
 // Middlewares
 app.use(cors());
-app.use(bodyParser.json());
+// app.use(bodyParser.json());
+app.use(express.json());
+
 
 // Razorpay Instance
 const razorpay = new Razorpay({
@@ -163,33 +165,32 @@ async function sendSMS(mobile, booking) {
 // ------------------------
 app.post("/create-order", async (req, res) => {
   try {
-    const rawAmount = req.body.amount;
-    const amount = Number(rawAmount);
+    console.log("BODY RECEIVED:", req.body);
 
-    if (!amount || amount <= 0 || Number.isNaN(amount)) {
+    const amount = Number(req.body.amount);
+
+    if (Number.isNaN(amount) || amount <= 0) {
       return res.status(400).json({
         error: "Invalid amount",
-        received: rawAmount,
+        received: req.body
       });
     }
 
-    // Convert rupees → paise
-    const amountInPaise = Math.round(Number(amount) * 100);
-
     const options = {
-      amount: amountInPaise,
+      amount: amount * 100, // rupees → paise
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
       payment_capture: 1,
     };
 
     const order = await razorpay.orders.create(options);
-    res.json(order);
-  } catch (error) {
-    console.error("❌ Error creating order:", error);
-    res.status(500).json({ error: "Server error creating Razorpay order" });
+    return res.json(order);
+  } catch (err) {
+    console.error("ORDER ERROR:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 });
+
 
 // ------------------------
 // VERIFY PAYMENT + SEND EMAIL + SMS
