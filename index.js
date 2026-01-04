@@ -66,13 +66,11 @@
 //   }
 // });
 
-
 // // ------------------------
 // // Start Server
 // // ------------------------
 // const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => console.log(`🚀 Backend running on port ${PORT}`));
-
 
 // index.js
 require("dotenv").config();
@@ -165,10 +163,14 @@ async function sendSMS(mobile, booking) {
 // ------------------------
 app.post("/create-order", async (req, res) => {
   try {
-    const { amount } = req.body;
+    const rawAmount = req.body.amount;
+    const amount = Number(rawAmount);
 
-    if (!amount || isNaN(amount)) {
-      return res.status(400).json({ error: "Invalid amount" });
+    if (!amount || amount <= 0 || Number.isNaN(amount)) {
+      return res.status(400).json({
+        error: "Invalid amount",
+        received: rawAmount,
+      });
     }
 
     // Convert rupees → paise
